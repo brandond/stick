@@ -19,11 +19,12 @@ setup(
     author_email='brad@oatmail.org',
     classifiers=[
         'Development Status :: 4 - Beta',
+        "Intended Audience :: Developers",
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python',
         'Topic :: System :: Archiving :: Packaging',
     ],
-    description="Stick is a utility for publishing Python packages to a PyPI-compatible index hosted on S3.",
+    description="Collection of utilities for publishing Python packages to PyPI-compatible indexes hosted on S3.",
     entry_points={
         'console_scripts': ['stick=stick.commands:cli']
     },
@@ -37,6 +38,7 @@ setup(
     long_description=readme,
     name='stick',
     packages=find_packages(exclude=('docs')),
+    python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
     url='https://github.com/brandond/stick',
     version_command=('git describe --tags --dirty', 'pep440-git-full'),
 )

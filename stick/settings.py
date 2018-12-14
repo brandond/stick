@@ -2,7 +2,7 @@ from .repository import Repository
 
 
 class Settings(object):
-    def __init__(self, bucket, prefix, profile, skip_existing, sign, sign_with, identity):
+    def __init__(self, bucket, prefix, profile=None, skip_existing=True, sign=False, sign_with='gpg', identity=None):
         self.bucket = bucket
         self.prefix = prefix
         self.profile = profile
