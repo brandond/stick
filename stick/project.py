@@ -1,7 +1,7 @@
 from packaging.version import parse
 from os.path import getsize
 from datetime import datetime
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 RELEASE_FIELDS = [
     'comment_text', 'digests', 'filename', 'has_sig', 'packagetype',
@@ -13,8 +13,7 @@ INFO_FIELDS = [
     'requires_dist', 'requires_python', 'summary', 'version']
 URL_FIELDS = [
     'comment_text', 'digests', 'filename', 'has_sig', 'md5_digest',
-    'packagetype', 'python_version', 'requires_python', 'size', 'upload_time',
-    'url']
+    'packagetype', 'python_version', 'requires_python', 'size', 'upload_time']
 
 
 class Project(object):
@@ -29,15 +28,15 @@ class Project(object):
         return self.manifest
 
     def get_metadata(self, version=None):
-        return {
-            'info': self.get_info(version),
-            'last_serial': -1,
-            'releases': self.get_releases(),
-            'urls': self.get_urls(version),
-            }
+        return OrderedDict([
+            ('info', self.get_info(version)),
+            ('last_serial', -1),
+            ('releases', self.get_releases()),
+            ('urls', self.get_urls(version)),
+            ])
 
     def get_releases(self):
-        return dict((str(v), [self._make_release(p) for p in pl]) for v, pl in self.releases.items())
+        return OrderedDict((str(v), [self._make_release(p) for p in self.releases[v]]) for v in sorted(self.releases.keys()))
 
     def get_info(self, version=None):
         version = parse(version) if version else max(self.releases.keys())
@@ -47,7 +46,9 @@ class Project(object):
         version = parse(version) if version else max(self.releases.keys())
         return [self._make_url(p) for p in self.releases[version]]
 
-    def add_package(self, package):
+    def add_package(self, package, upload_time=None):
+        if upload_time is None:
+            upload_time = datetime.utcnow()
         package_info = {
             'author': package.metadata.author,
             'author_email': package.metadata.author_email,
@@ -69,14 +70,14 @@ class Project(object):
             'md5_digest': package.md5_digest,
             'name': package.metadata.name,
             'packagetype': package.filetype,
-            'platform': package.platforms[0],
+            'platform': package.metadata.platforms[0],
             'project_urls': package.metadata.project_urls,
             'python_version': package.python_version,
             'requires_dist': package.metadata.requires_dist,
             'requires_python': package.metadata.requires_python,
             'size': getsize(package.filename),
             'summary': package.metadata.summary,
-            'upload_time': datetime.utcnow().strftime('%Y-%m-%dT%H:%m:%S'),
+            'upload_time': upload_time.strftime('%Y-%m-%dT%H:%m:%S'),
             'version': package.metadata.version,
              }
 
@@ -88,25 +89,37 @@ class Project(object):
         self.releases.clear()
         for package_info in self.manifest:
             version = parse(package_info['version'])
-            self.manifest[version].append(package_info)
+            self.releases[version].append(package_info)
 
         for package_list in self.releases.values():
-            package_list[:] = sorted(package_list, key=lambda p: p['upload_time'])
+            package_list[:] = sorted(package_list, key=lambda p: p['filename'])
 
     def _make_release(self, package_info):
-        release = dict((k, package_info[k]) for k in RELEASE_FIELDS)
+        release = OrderedDict((k, package_info[k]) for k in RELEASE_FIELDS)
         release['downloads'] = -1
         release['url'] = self._get_package_url(package_info)
         return release
 
     def _make_info(self, package_info):
-        info = dict((k, package_info[k]) for k in INFO_FIELDS)
+        info = OrderedDict((k, '' if package_info[k] is None else package_info[k]) for k in INFO_FIELDS)
+        info['bugtrack_url'] = None
+        info['docs_url'] = None
+        info['downloads'] = {'last_day': -1, 'last_month': -1, 'last_week': -1}
+        info['package_url'] = self._get_package_url(package_info, None)
+        info['platform'] = '' if info['platform'] == 'UNKNOWN' else info['platform']
+        info['project_url'] = info['package_url']
+        info['project_urls'] = {'Homepage': info['home_page']} if not info['project_urls'] else dict(info['project_urls'])
+        info['release_url'] = self._get_package_url(package_info, 'version', '/')
         return info
 
     def _make_url(self, package_info):
-        url = dict((k, package_info[k]) for k in URL_FIELDS)
+        url = OrderedDict((k, package_info[k]) for k in URL_FIELDS)
+        url['md5_digest'] = package_info['digests']['md5']
+        url['url'] = self._get_package_url(package_info)
         return url
 
-    def _get_package_url(self, package_info):
-        return '{0}{1}/{2}'.format(
-            self.repository.get_url(), self.safe_name, package_info['filename'])
+    def _get_package_url(self, package_info, key='filename', term=''):
+        url = '{0}{1}/'.format(self.repository.get_url(), self.safe_name)
+        if key in package_info:
+            url += '{0}{1}'.format(package_info[key], term)
+        return url.replace('+', '%2B')

@@ -17,7 +17,7 @@ def cli():
 @click.option('--sign/--no-sign', default=False)
 @click.option('--sign-with')
 @click.option('--identity')
-@click.argument('dist', nargs=-1, type=click.File())
+@click.argument('dist', nargs=-1, type=click.Path(exists=True, dir_okay=False, allow_dash=False))
 def upload(dist, **kwargs):
     upload_settings = Settings(**kwargs)
     signatures = dict((os.path.basename(d), d) for d in dist if d.endswith('.asc'))
