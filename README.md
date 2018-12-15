@@ -70,7 +70,7 @@ Options:
   --prefix TEXT         Prefix within the S3 Bucket under which repository objects will be created.  [default: simple]
   --profile TEXT        Use a specific profile from your credential file to access S3.
   --skip-existing / --no-skip-existing
-                        Continue uploading files if one already exists.  [default: False]
+                        Continue uploading files if one already exists.  [default: True]
   --sign / --no-sign    Sign files to upload using GPG.  [default: False]
   --sign-with TEXT      GPG program used to sign uploads.  [default: gpg]
   --identity TEXT       GPG identity used to sign files.
