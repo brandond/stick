@@ -76,7 +76,7 @@ Options:
 
 Reindex the repository:
 
-_*Note:* Reindexing is not normally necessary unless files have been manually added or removed from the bucket.
+_**Note:** Reindexing is not normally necessary unless files have been manually added or removed from the bucket.
 Reindexing will temporarily download all packages from the remote repository in order to extract packaging metadata._
 
 ```
@@ -86,16 +86,17 @@ Options:
   --bucket TEXT         S3 Bucket hosting the repository  [required]
   --prefix TEXT         Prefix within the S3 Bucket that repository objects will be created  [default: simple]
   --profile TEXT        Use a specific profile from your credential file
+  --project TEXT        Rebuild the index for a specific project only. May be specified multiple times.  [default: all projects]
   --help                Show this message and exit
 ```
 
 Features
 --------
 
-The indexes created by Stick are intended to be compatible with both the [pypi-legacy API](https://warehouse.readthedocs.io/api-reference/legacy/),
+The indexes created by Stick are intended to be compatible with both the [pypi-legacy PEP 503 API](https://www.python.org/dev/peps/pep-0503/),
 as well as the new [Warehouse JSON APIs](https://warehouse.readthedocs.io/api-reference/json/).
 
-*File Structure*
+**File Structure**
 
 * `<prefix>/`  - PEP 503 Simple HTML-based project index for this repository
 * `<prefix>/<project_name>/`  - PEP 503 Simple HTML-based package index for this project
@@ -106,13 +107,13 @@ as well as the new [Warehouse JSON APIs](https://warehouse.readthedocs.io/api-re
 * `<prefix>/<project_name>/<project_name>-<version>.tar.gz`  - Package artifact (sdist)
 * `<prefix>/<project_name>/<project_name>-<version>-py2.py3-none-any.whl`  - Package artifact (wheel)
 
-*Package Manifest*
+**Package Manifest**
 
 Stick maintains a flattened list of package metadata for each project in `manifest.json`. This manifest is used to rebuild the HTML index and JSON metadata
 when a new package is added to the repository. If objects are manually added or removed from the bucket, you must reindex the repository in order
 to reflect the changes.
 
-*Project Manifest*
+**Project Manifest**
 
 Stick does not maintain a top-level project manifest. It assumes that all common prefixes under the top-level prefix correspond to projects,
 and will link them as such in the repository index.
