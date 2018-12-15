@@ -92,8 +92,8 @@ Options:
 Features
 --------
 
-The indexes created by Stick are intended to be compatible with both the [pypi-legacy API](https://github.com/pypa/warehouse/blob/master/docs/api-reference/legacy.rst),
-as well as the new [Warehouse JSON APIs](https://github.com/pypa/warehouse/blob/master/docs/api-reference/json.rst).
+The indexes created by Stick are intended to be compatible with both the [pypi-legacy API](https://warehouse.readthedocs.io/api-reference/legacy/),
+as well as the new [Warehouse JSON APIs](https://warehouse.readthedocs.io/api-reference/json/).
 
 *File Structure*
 
@@ -105,7 +105,6 @@ as well as the new [Warehouse JSON APIs](https://github.com/pypa/warehouse/blob/
 * `<prefix>/<project_name>/<version>/json`  - Warehouse JSON metadata for a specific version of this project
 * `<prefix>/<project_name>/<project_name>-<version>.tar.gz`  - Package artifact (sdist)
 * `<prefix>/<project_name>/<project_name>-<version>-py2.py3-none-any.whl`  - Package artifact (wheel)
-```
 
 *Package Manifest*
 
