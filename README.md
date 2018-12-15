@@ -26,8 +26,9 @@ Getting Started
     stick upload --bucket my-bucket-name --prefix simple my-package/dist/*
     ```
 
-4. **Tell pip to use your S3 repository:**
+4. **Tell pip to use your S3 repository's index:**
 
+    *configuration file:*
     ```sh
     test -d $HOME/.pip/ || mkdir $HOME/.pip/
     cat <<EOF >> $HOME/.pip/pip.conf
@@ -37,9 +38,14 @@ Getting Started
     EOF
     ```
 
-    - or -
+    *environment variable:*
     ```sh
     export PIP_EXTRA_INDEX_URL=https://my-bucket-name.s3.amazonaws.com/simple/
+    ```
+
+    *command line:*
+    ```sh
+    pip install my-package --extra-index-url=https://my-bucket-name.s3.amazonaws.com/simple/
     ```
 
 Usage
@@ -70,6 +76,9 @@ Options:
 
 Reindex the repository:
 
+_*Note:* Reindexing is not normally necessary unless files have been manually added or removed from the bucket.
+Reindexing will temporarily download all packages from the remote repository in order to extract packaging metadata._
+
 ```
 Usage: stick reindex [OPTIONS]
 
@@ -80,3 +89,31 @@ Options:
   --help                Show this message and exit
 ```
 
+Features
+--------
+
+The indexes created by Stick are intended to be compatible with both the [pypi-legacy API](https://github.com/pypa/warehouse/blob/master/docs/api-reference/legacy.rst),
+as well as the new [Warehouse JSON APIs](https://github.com/pypa/warehouse/blob/master/docs/api-reference/json.rst).
+
+*File Structure*
+
+* `<prefix>/`  - PEP 503 Simple HTML-based project index for this repository
+* `<prefix>/<project_name>/`  - PEP 503 Simple HTML-based package index for this project
+* `<prefix>/<project_name>/json`  - Warehouse JSON metadata for the latest version of this project
+* `<prefix>/<project_name>/manifest.json`  - Stick internal cache of package metadata
+* `<prefix>/<project_name>/<version>/`  - PyPI legacy style project version info page
+* `<prefix>/<project_name>/<version>/json`  - Warehouse JSON metadata for a specific version of this project
+* `<prefix>/<project_name>/<project_name>-<version>.tar.gz`  - Package artifact (sdist)
+* `<prefix>/<project_name>/<project_name>-<version>-py2.py3-none-any.whl`  - Package artifact (wheel)
+```
+
+*Package Manifest*
+
+Stick maintains a flattened list of package metadata for each project in `manifest.json`. This manifest is used to rebuild the HTML index and JSON metadata
+when a new package is added to the repository. If objects are manually added or removed from the bucket, you must reindex the repository in order
+to reflect the changes.
+
+*Project Manifest*
+
+Stick does not maintain a top-level project manifest. It assumes that all common prefixes under the top-level prefix correspond to projects,
+and will link them as such in the repository index.
