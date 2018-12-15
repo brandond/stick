@@ -71,6 +71,7 @@ class Repository(object):
         project.add_package(package)
 
         self._put_package(safe_name, package)
+        self._put_signature(safe_name, package)
         self._put_manifest(safe_name, project)
         self._put_json(safe_name, project, version)
         self._put_release(safe_name, project, version)
@@ -199,6 +200,14 @@ class Repository(object):
         with open(package.filename, 'rb') as data:
             self.client.upload_fileobj(Fileobj=data, Bucket=self.bucket, Key=package_key, ExtraArgs={'ContentType': 'application/octet-stream'})
 
+    def _put_signature(self, safe_name, package):
+        if package.gpg_signature is None:
+            return
+        signed_key = '{0}{1}/{2}'.format(self.prefix, safe_name, package.signed_basefilename)
+        logger.info('Uploading {0}'.format(signed_key))
+        with open(package.signed_filename, 'rb') as data:
+            self.client.upload_fileobj(Fileobj=data, Bucket=self.bucket, Key=signed_key, ExtraArgs={'ContentType': 'application/octet-stream'})
+
     def _get_packages(self, safe_name):
         """Yield (PackageFile, metadata) for each package in the project"""
         prefix = '{0}{1}/'.format(self.prefix, safe_name)
@@ -212,18 +221,22 @@ class Repository(object):
                             filename = os.path.join(temp_dir, key)
                             logger.info('Downloading {0}'.format(item['Key']))
                             self.client.download_file(Bucket=self.bucket, Key=item['Key'], Filename=filename)
+                            package = PackageFile.from_filename(filename, '')
                             try:
                                 self.client.head_object(Bucket=self.bucket, Key=item['Key'] + '.asc')
-                                logger.info('Downloading {0} (signature)'.format(Key=item['Key'] + '.asc'))
+                                logger.info('Downloading {0}'.format(item['Key'] + '.asc'))
                                 self.client.download_file(Bucket=self.bucket, Key=item['Key'] + '.asc', Filename=filename + '.asc')
+                                package.add_gpg_signature(package.signed_filename, package.signed_basefilename)
                             except ClientError as e:
                                 if e.response['Error']['Code'] in ['403', '404']:
                                     logger.debug('No GPG signature for {0}'.format(item['Key']))
                                 else:
                                     raise e
-                            package = PackageFile.from_filename(filename, '')
                             yield (package, item)
                         except InvalidDistribution as e:
                             logger.warn('Skipping {0}: {1}'.format(item['Key'], e))
                         except ClientError:
                             logger.error('Failed to download {0}'.format(item['Key']), exc_info=True)
+                        finally:
+                            if os.path.exists(filename):
+                                os.unlink(filename)
