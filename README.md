@@ -3,9 +3,10 @@ stick
 [![PyPI version](https://badge.fury.io/py/stick.svg)](https://badge.fury.io/py/stick)
 [![Build Status](https://travis-ci.org/brandond/stick.svg?branch=master)](https://travis-ci.org/brandond/stick)
 
-Stick is a utility for publishing Python packages to PyPI-compatible indexes hosted on S3.
-
 Stick your package in a bucket!
+
+Stick is a utility for publishing Python packages to PyPI-compatible indexes hosted on S3.
+Its syntax and functionality are inspired by [twine](https://pypi.org/project/twine/).
 
 Getting Started
 ---------------
@@ -79,7 +80,7 @@ Options:
 Reindex the repository:
 
 _**Note:** Reindexing is not normally necessary unless files have been manually added or removed from the bucket.
-Reindexing will temporarily download all packages from the remote repository in order to extract packaging metadata._
+Reindexing will temporarily download all packages from the repository in order to extract packaging metadata._
 
 ```
 Usage: stick reindex [OPTIONS]
