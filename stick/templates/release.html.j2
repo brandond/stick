@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>{{project.safe_name}}=={{version}}</title>
+    <title>Links for {{project.safe_name}}</title>
     <meta name="generator" content="{{util.pkgname}}/{{util.version}}">
   </head>
   <body>
-  <h1>{{project.safe_name}}=={{version}}</h1>
-  <table>
   {%- set info = project.get_info(version) %}
+  <h1>{{project.safe_name}} {{info.version}}</h1>
+  <p><code>pip install {{project.safe_name}}=={{info.version}}</code></p>
+  <table>
   {%- for key in ['summary', 'author', 'author_email', 'home_page', 'license', 'keywords', 'requires_python'] %}
     <tr>
       <th scope="row">{{key}}</th>

@@ -5,7 +5,24 @@
     <meta name="generator" content="{{util.pkgname}}/{{util.version}}">
   </head>
   <body>
-  <h1>Links for {{project.safe_name}}</h1>
+  {%- set info = project.get_info() %}
+  <h1>{{project.safe_name}} {{info.version}}</h1>
+  <p><code>pip install {{project.safe_name}}</code></p>
+  <table>
+  {%- for key in ['summary', 'author', 'author_email', 'home_page', 'license', 'keywords', 'requires_python'] %}
+    <tr>
+      <th scope="row">{{key}}</th>
+      <td>{{info[key]}}</td>
+    </tr>
+  {%- endfor %}
+  {%- for key in ['requires_dist', 'classifiers'] %}
+    <tr>
+      <th scope="row">{{key}}</th>
+      <td>{{info[key] | join('<br>')}}</td>
+    </tr>
+  {%- endfor %}
+  </table>
+  <br>
   {%- for version, packages in project.get_releases() | dictsort() %}
   {%- for package in packages %}
   <a href="{{package.url}}#sha256={{package.digests.sha256}}" data-gpg-sig="{{package.has_sig | lower()}}" data-requires-python="{{package.requires_python | default('', true)}}">{{package.filename}}</a><br>
