@@ -1,5 +1,6 @@
 backports.tempfile
 boto3
 click
+jinja2
 packaging >= 18.0
 twine >= 1.12.1

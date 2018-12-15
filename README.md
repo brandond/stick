@@ -3,10 +3,10 @@ stick
 [![PyPI version](https://badge.fury.io/py/stick.svg)](https://badge.fury.io/py/stick)
 [![Build Status](https://travis-ci.org/brandond/stick.svg?branch=master)](https://travis-ci.org/brandond/stick)
 
-Stick your package in a bucket!
-
 Stick is a utility for publishing Python packages to PyPI-compatible indexes hosted on S3.
 Its syntax and functionality are inspired by [twine](https://pypi.org/project/twine/).
+
+_Stick your package in a bucket!_
 
 Getting Started
 ---------------
@@ -46,7 +46,7 @@ Getting Started
     export PIP_EXTRA_INDEX_URL=https://my-bucket-name.s3.amazonaws.com/simple/
     ```
 
-    *command line:*
+    *command line option:*
     ```sh
     pip install my-package --extra-index-url=https://my-bucket-name.s3.amazonaws.com/simple/
     ```
@@ -66,31 +66,31 @@ Positional Arguments:
                         with the file upload.
 
 Options:
-  --bucket TEXT         S3 Bucket hosting the repository  [required]
-  --prefix TEXT         Prefix within the S3 Bucket that repository objects will be created  [default: simple]
-  --profile TEXT        Use a specific profile from your credential file
+  --bucket TEXT         S3 Bucket hosting the repository.  [required]
+  --prefix TEXT         Prefix within the S3 Bucket under which repository objects will be created.  [default: simple]
+  --profile TEXT        Use a specific profile from your credential file to access S3.
   --skip-existing / --no-skip-existing
-                        Continue uploading files if one already exists  [default: False]
-  --sign / --no-sign    Sign files to upload using GPG  [default: False]
-  --sign-with TEXT      GPG program used to sign uploads  [default: gpg]
-  --identity TEXT       GPG identity used to sign files
-  --help                Show this message and exit
+                        Continue uploading files if one already exists.  [default: False]
+  --sign / --no-sign    Sign files to upload using GPG.  [default: False]
+  --sign-with TEXT      GPG program used to sign uploads.  [default: gpg]
+  --identity TEXT       GPG identity used to sign files.
+  --help                Show this message and exit.
 ```
 
 Reindex the repository:
 
 _**Note:** Reindexing is not normally necessary unless files have been manually added or removed from the bucket.
-Reindexing will temporarily download all packages from the repository in order to extract packaging metadata._
+Reindexing will read all packages from the repository in order to extract packaging metadata._
 
 ```
 Usage: stick reindex [OPTIONS]
 
 Options:
-  --bucket TEXT         S3 Bucket hosting the repository  [required]
-  --prefix TEXT         Prefix within the S3 Bucket that repository objects will be created  [default: simple]
-  --profile TEXT        Use a specific profile from your credential file
-  --project TEXT        Rebuild the index for a specific project only. May be specified multiple times.  [default: all projects]
-  --help                Show this message and exit
+  --bucket TEXT         S3 Bucket hosting the repository.  [required]
+  --prefix TEXT         Prefix within the S3 Bucket under which repository objects will be created.  [default: simple]
+  --profile TEXT        Use a specific profile from your credential file to access S3.
+  --project TEXT        Reindex a specific project. May be specified multiple times.  [default: all projects]
+  --help                Show this message and exit.
 ```
 
 Features
@@ -112,11 +112,11 @@ as well as the new [Warehouse JSON APIs](https://warehouse.readthedocs.io/api-re
 
 **Package Manifest**
 
-Stick maintains a flattened list of package metadata for each project in `manifest.json`. This manifest is used to rebuild the HTML index and JSON metadata
-when a new package is added to the repository. If objects are manually added or removed from the bucket, you must reindex the repository in order
-to reflect the changes.
+Stick maintains a flattened list of package metadata for each project in `manifest.json`. This manifest is used to rebuild the HTML index and
+JSON metadata when a new package is added to the repository. If objects are manually added or removed from the bucket, you must reindex the
+repository in order to reflect the changes.
 
 **Project Manifest**
 
-Stick does not maintain a top-level project manifest. It assumes that all common prefixes under the top-level prefix correspond to projects,
-and will link them as such in the repository index.
+Stick does not maintain a top-level project list. Whenever a package is uploaded or the repository reindexed, Stick checks all prefixes under
+the top-level prefix for a `manifest.json`. Any prefix containing such key is displayed in the project list.

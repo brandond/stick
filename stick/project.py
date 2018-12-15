@@ -40,7 +40,7 @@ class Project(object):
 
     def get_info(self, version=None):
         version = parse(version) if version else max(self.releases.keys())
-        return self._make_info(self.releases[version][-1])
+        return self._make_info(self.releases[version][0])
 
     def get_urls(self, version=None):
         version = parse(version) if version else max(self.releases.keys())
@@ -92,7 +92,7 @@ class Project(object):
             self.releases[version].append(package_info)
 
         for package_list in self.releases.values():
-            package_list[:] = sorted(package_list, key=lambda p: p['filename'])
+            package_list[:] = sorted(package_list, key=lambda p: (p['packagetype'], p['filename']))
 
     def _make_release(self, package_info):
         release = OrderedDict((k, package_info[k]) for k in RELEASE_FIELDS)

@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Simple Index</title>
+    <meta name="generator" content="{{util.pkgname}}/{{util.version}}">
+  </head>
+  <body>
+  {%- set base_url = repository.get_url() %}
+  {%- for safe_name in projects %}
+  <a href="{{base_url}}{{safe_name}}/">{{safe_name}}</a><br>
+  {%- endfor %}
+  </body>
+</html>

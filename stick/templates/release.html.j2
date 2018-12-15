@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{{project.safe_name}}=={{version}}</title>
+    <meta name="generator" content="{{util.pkgname}}/{{util.version}}">
+  </head>
+  <body>
+  <h1>{{project.safe_name}}=={{version}}</h1>
+  <table>
+  {%- set info = project.get_info(version) %}
+  {%- for key in ['summary', 'author', 'author_email', 'home_page', 'license', 'keywords', 'requires_python'] %}
+    <tr>
+      <th scope="row">{{key}}</th>
+      <td>{{info[key]}}</td>
+    </tr>
+  {%- endfor %}
+  {%- for key in ['requires_dist', 'classifiers'] %}
+    <tr>
+      <th scope="row">{{key}}</th>
+      <td>{{info[key] | join('<br>')}}</td>
+    </tr>
+  {%- endfor %}
+  </table>
+  <br>
+  {%- for url in project.get_urls(version) %}
+  <a href="{{url.url}}#sha256={{url.digests.sha256}}" data-gpg-sig="{{url.has_sig | lower()}}" data-requires-python="{{url.requires_python | default('', true)}}">{{url.filename}}</a><br>
+  {%- endfor %}
+  </body>
+</html>

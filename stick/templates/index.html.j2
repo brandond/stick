@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Links for {{project.safe_name}}</title>
+    <meta name="generator" content="{{util.pkgname}}/{{util.version}}">
+  </head>
+  <body>
+  <h1>Links for {{project.safe_name}}</h1>
+  {%- for version, packages in project.get_releases() | dictsort() %}
+  {%- for package in packages %}
+  <a href="{{package.url}}#sha256={{package.digests.sha256}}" data-gpg-sig="{{package.has_sig | lower()}}" data-requires-python="{{package.requires_python | default('', true)}}">{{package.filename}}</a><br>
+  {%- endfor %}
+  {%- endfor %}
+  </body>
+</html>
