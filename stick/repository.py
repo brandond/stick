@@ -144,7 +144,7 @@ class Repository(object):
         with io.BytesIO() as data:
             json.dump(project.get_manifest(), data)
             data.seek(0, 0)
-            self.client.upload_fileobj(Fileobj=data, Bucket=self.bucket, Key=json_key, ExtraArgs={'ContentType': 'application/json'})
+            self.client.upload_fileobj(Fileobj=data, Bucket=self.bucket, Key=json_key, ExtraArgs={'ContentType': 'application/json; charset=utf-8'})
 
     def _put_json(self, safe_name, project, version=None):
         """Regenerate and upload the project or release-level index JSON"""
@@ -154,7 +154,7 @@ class Repository(object):
         with io.BytesIO() as data:
             json.dump(project.get_metadata(version), data)
             data.seek(0, 0)
-            self.client.upload_fileobj(Fileobj=data, Bucket=self.bucket, Key=json_key, ExtraArgs={'ContentType': 'application/json'})
+            self.client.upload_fileobj(Fileobj=data, Bucket=self.bucket, Key=json_key, ExtraArgs={'ContentType': 'application/json; charset=utf-8'})
 
     def _put_index(self, safe_name, project):
         """Regenerate and upload the project-level index HTML"""
@@ -164,7 +164,7 @@ class Repository(object):
         with io.BytesIO() as data:
             data.write(template.render(project=project).encode())
             data.seek(0, 0)
-            self.client.upload_fileobj(Fileobj=data, Bucket=self.bucket, Key=index_key, ExtraArgs={'ContentType': 'text/html'})
+            self.client.upload_fileobj(Fileobj=data, Bucket=self.bucket, Key=index_key, ExtraArgs={'ContentType': 'text/html; charset=utf-8'})
 
     def _put_release(self, safe_name, project, version):
         """Regenerate and upload the release-level index HTML"""
@@ -174,7 +174,7 @@ class Repository(object):
         with io.BytesIO() as data:
             data.write(template.render(project=project, version=version).encode())
             data.seek(0, 0)
-            self.client.upload_fileobj(Fileobj=data, Bucket=self.bucket, Key=release_key, ExtraArgs={'ContentType': 'text/html'})
+            self.client.upload_fileobj(Fileobj=data, Bucket=self.bucket, Key=release_key, ExtraArgs={'ContentType': 'text/html; charset=utf-8'})
 
     def _get_projects(self):
         projects = []
@@ -190,7 +190,7 @@ class Repository(object):
         with io.BytesIO() as data:
             data.write(template.render(repository=self, projects=projects).encode())
             data.seek(0, 0)
-            self.client.upload_fileobj(Fileobj=data, Bucket=self.bucket, Key=self.prefix, ExtraArgs={'ContentType': 'text/html'})
+            self.client.upload_fileobj(Fileobj=data, Bucket=self.bucket, Key=self.prefix, ExtraArgs={'ContentType': 'text/html; charset=utf-8'})
 
     def _put_package(self, safe_name, package):
         """Upload a single package to S3"""
