@@ -1,15 +1,17 @@
-import boto3
-import json
 import io
-import os
+import json
 import logging
+import os
+from shutil import copyfileobj
 
-from botocore.exceptions import ClientError
-from twine.package import PackageFile
-from twine.exceptions import InvalidDistribution
+import boto3
 from backports import tempfile
-from .project import Project
+from botocore.exceptions import ClientError
+from twine.exceptions import InvalidDistribution
+from twine.package import PackageFile
+
 from .j2 import environ
+from .project import Project
 from .util import client_config
 
 logger = logging.getLogger(__name__)
@@ -31,17 +33,17 @@ class Repository(object):
 
     def reindex(self, projects):
         """Rebuild html index and json metadata for projects in the repository"""
-        all_projects = self._get_projects()
+        all_projects = self._list_project_names()
         if not projects:
             projects = all_projects[:]
 
         for safe_name in projects:
             try:
                 project = Project(safe_name, self)
-                for package, metadata in self._get_packages(safe_name):
+                for package, s3meta in self._get_packages(safe_name):
                     try:
                         version = package.metadata.version
-                        project.add_package(package, metadata['LastModified'])
+                        project.add_package(package, upload_time=s3meta['LastModified'], etag=s3meta['ETag'])
                         self._put_json(safe_name, project, version)
                         self._put_release(safe_name, project, version)
                     except Exception:
@@ -62,15 +64,34 @@ class Repository(object):
 
         self._update_repository_index(all_projects)
 
+    def check(self, projects):
+        if not projects:
+            projects = self._list_project_names()
+
+        for safe_name in projects:
+            project = self._get_project(safe_name)
+            if not project.manifest:
+                logger.warn('No packages in manifest for {0}'.format(safe_name))
+
+            for package_info in project.manifest:
+                s3meta = self._head_package(safe_name, package_info['filename'])
+                if not s3meta:
+                    logger.warn('File missing for {0}/{1}'.format(safe_name, package_info['filename']))
+                elif package_info.get('etag') != s3meta.get('ETag'):
+                    logger.warn('ETag changed for {0}/{1} - {2} -> {3}'.format(
+                        safe_name, package_info['filename'], package_info.get('etag'), s3meta.get('ETag')))
+                else:
+                    logger.info('Check OK for {0}/{1}'.format(safe_name, package_info['filename']))
+
     def upload(self, package):
         """Upload a single package"""
         safe_name = package.safe_name
         version = package.metadata.version
         project = self._get_project(safe_name)
 
-        project.add_package(package)
+        s3meta = self._put_package(safe_name, package)
+        project.add_package(package, etag=s3meta['ETag'])
 
-        self._put_package(safe_name, package)
         self._put_signature(safe_name, package)
         self._put_manifest(safe_name, project)
         self._put_json(safe_name, project, version)
@@ -91,7 +112,7 @@ class Repository(object):
 
     def update_index(self):
         """Update the top-level project index"""
-        projects = self._get_projects()
+        projects = self._list_project_names()
         for safe_name in projects[:]:
             if safe_name not in self._project_cache and not self._head_manifest(safe_name):
                 projects.remove(safe_name)
@@ -125,7 +146,19 @@ class Repository(object):
             return self.client.head_object(Bucket=self.bucket, Key=json_key)
         except ClientError as e:
             if e.response['Error']['Code'] in ['403', '404']:
-                return None
+                return {}
+            else:
+                raise e
+
+    def _head_package(self, safe_name, filename):
+        """Upload a single package to S3"""
+        package_key = '{0}{1}/{2}'.format(self.prefix, safe_name, filename)
+        logger.info('Checking {0}'.format(package_key))
+        try:
+            return self.client.head_object(Bucket=self.bucket, Key=package_key)
+        except ClientError as e:
+            if e.response['Error']['Code'] in ['403', '404']:
+                return {}
             else:
                 raise e
 
@@ -145,7 +178,7 @@ class Repository(object):
         with io.BytesIO() as data:
             json.dump(project.get_manifest(), data)
             data.seek(0, 0)
-            self.client.upload_fileobj(Fileobj=data, Bucket=self.bucket, Key=json_key, ExtraArgs={'ContentType': 'application/json; charset=utf-8'})
+            return self.client.put_object(Body=data, Bucket=self.bucket, Key=json_key, ContentType='application/json; charset=utf-8')
 
     def _put_json(self, safe_name, project, version=None):
         """Regenerate and upload the project or release-level index JSON"""
@@ -155,7 +188,7 @@ class Repository(object):
         with io.BytesIO() as data:
             json.dump(project.get_metadata(version), data)
             data.seek(0, 0)
-            self.client.upload_fileobj(Fileobj=data, Bucket=self.bucket, Key=json_key, ExtraArgs={'ContentType': 'application/json; charset=utf-8'})
+            return self.client.put_object(Body=data, Bucket=self.bucket, Key=json_key, ContentType='application/json; charset=utf-8')
 
     def _put_index(self, safe_name, project):
         """Regenerate and upload the project-level index HTML"""
@@ -165,7 +198,7 @@ class Repository(object):
         with io.BytesIO() as data:
             data.write(template.render(project=project).encode())
             data.seek(0, 0)
-            self.client.upload_fileobj(Fileobj=data, Bucket=self.bucket, Key=index_key, ExtraArgs={'ContentType': 'text/html; charset=utf-8'})
+            return self.client.put_object(Body=data, Bucket=self.bucket, Key=index_key, ContentType='text/html; charset=utf-8')
 
     def _put_release(self, safe_name, project, version):
         """Regenerate and upload the release-level index HTML"""
@@ -175,9 +208,9 @@ class Repository(object):
         with io.BytesIO() as data:
             data.write(template.render(project=project, version=version).encode())
             data.seek(0, 0)
-            self.client.upload_fileobj(Fileobj=data, Bucket=self.bucket, Key=release_key, ExtraArgs={'ContentType': 'text/html; charset=utf-8'})
+            return self.client.put_object(Body=data, Bucket=self.bucket, Key=release_key, ContentType='text/html; charset=utf-8')
 
-    def _get_projects(self):
+    def _list_project_names(self):
         projects = []
         logger.info('Looking for projects in {}'.format(self.prefix))
         for page in self.client.get_paginator('list_objects').paginate(Bucket=self.bucket, Prefix=self.prefix, Delimiter='/'):
@@ -191,14 +224,14 @@ class Repository(object):
         with io.BytesIO() as data:
             data.write(template.render(repository=self, projects=projects).encode())
             data.seek(0, 0)
-            self.client.upload_fileobj(Fileobj=data, Bucket=self.bucket, Key=self.prefix, ExtraArgs={'ContentType': 'text/html; charset=utf-8'})
+            return self.client.put_object(Body=data, Bucket=self.bucket, Key=self.prefix, ContentType='text/html; charset=utf-8')
 
     def _put_package(self, safe_name, package):
         """Upload a single package to S3"""
         package_key = '{0}{1}/{2}'.format(self.prefix, safe_name, package.basefilename)
         logger.info('Uploading {0}'.format(package_key))
         with open(package.filename, 'rb') as data:
-            self.client.upload_fileobj(Fileobj=data, Bucket=self.bucket, Key=package_key, ExtraArgs={'ContentType': 'application/octet-stream'})
+            return self.client.put_object(Body=data, Bucket=self.bucket, Key=package_key, ContentType='application/octet-stream')
 
     def _put_signature(self, safe_name, package):
         if package.gpg_signature is None:
@@ -206,7 +239,7 @@ class Repository(object):
         signed_key = '{0}{1}/{2}'.format(self.prefix, safe_name, package.signed_basefilename)
         logger.info('Uploading {0}'.format(signed_key))
         with open(package.signed_filename, 'rb') as data:
-            self.client.upload_fileobj(Fileobj=data, Bucket=self.bucket, Key=signed_key, ExtraArgs={'ContentType': 'application/octet-stream'})
+            return self.client.put_object(Body=data, Bucket=self.bucket, Key=signed_key, ContentType='application/octet-stream')
 
     def _get_packages(self, safe_name):
         """Yield (PackageFile, metadata) for each package in the project"""
@@ -220,7 +253,8 @@ class Repository(object):
                         try:
                             filename = os.path.join(temp_dir, key)
                             logger.info('Downloading {0}'.format(item['Key']))
-                            self.client.download_file(Bucket=self.bucket, Key=item['Key'], Filename=filename)
+                            with open(filename, 'wb') as data:
+                                copyfileobj(self.client.download_file(Bucket=self.bucket, Key=item['Key'])['Body'], data)
                             package = PackageFile.from_filename(filename, '')
                             try:
                                 self.client.head_object(Bucket=self.bucket, Key=item['Key'] + '.asc')

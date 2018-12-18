@@ -1,7 +1,8 @@
-from packaging.version import parse
-from os.path import getsize
+from collections import OrderedDict, defaultdict
 from datetime import datetime
-from collections import defaultdict, OrderedDict
+from os.path import getsize
+
+from packaging.version import parse
 
 RELEASE_FIELDS = [
     'comment_text', 'digests', 'filename', 'has_sig', 'packagetype',
@@ -46,7 +47,7 @@ class Project(object):
         version = parse(version) if version else max(self.releases.keys())
         return [self._make_url(p) for p in self.releases[version]]
 
-    def add_package(self, package, upload_time=None):
+    def add_package(self, package, upload_time=None, etag=None):
         if upload_time is None:
             upload_time = datetime.utcnow()
         package_info = {
@@ -60,6 +61,7 @@ class Project(object):
                 'md5': package.md5_digest,
                 'sha256': package.sha2_digest,
                 },
+            'etag': etag,
             'filename': package.basefilename,
             'has_sig': package.gpg_signature is not None,
             'home_page': package.metadata.home_page,

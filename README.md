@@ -1,7 +1,7 @@
 stick
 =====
 [![PyPI version](https://badge.fury.io/py/stick.svg)](https://badge.fury.io/py/stick)
-[![Build Status](https://travis-ci.org/brandond/stick.svg?branch=master)](https://travis-ci.org/brandond/stick)
+[![Build Status](https://travis-ci.com/brandond/stick.svg?branch=master)](https://travis-ci.com/brandond/stick)
 
 Stick is a utility for publishing Python packages to PyPI-compatible indexes hosted on S3.
 Its syntax and functionality are inspired by [twine](https://pypi.org/project/twine/).
@@ -54,30 +54,46 @@ Getting Started
 Usage
 -----
 
-Upload one or more packages to a repository:
+#### Upload
 
 ```
 Usage: stick upload [OPTIONS] [DIST]...
 
+  Upload one or more files to the repository.
+
 Positional Arguments:
-  dist                  The distribution files to upload to the repository
-                        (package index). Usually dist/* . May additionally
-                        contain a .asc file to include an existing signature
-                        with the file upload.
+  dist                  The distribution files to upload to the repository (package index).
+                        Usually dist/* . May additionally contain a .asc file to include an
+                        existing signature with the file upload.
 
 Options:
-  --bucket TEXT         S3 Bucket hosting the repository.  [required]
-  --prefix TEXT         Prefix within the S3 Bucket under which repository objects will be created.  [default: simple]
-  --profile TEXT        Use a specific profile from your credential file to access S3.
+  --bucket TEXT       S3 Bucket hosting the repository.  [required]
+  --prefix TEXT       Prefix within the S3 Bucket that repository objects are stored.  [default: simple]
+  --profile TEXT      Use a specific profile from your credential file to access S3.
   --skip-existing / --no-skip-existing
-                        Continue uploading files if one already exists.  [default: True]
-  --sign / --no-sign    Sign files to upload using GPG.  [default: False]
-  --sign-with TEXT      GPG program used to sign uploads.  [default: gpg]
-  --identity TEXT       GPG identity used to sign files.
-  --help                Show this message and exit.
+                      Skip uploading file if it already exists.  [default: True]
+  --sign / --no-sign  Sign files prior to upload using GPG.  [default: False]
+  --sign-with TEXT    GPG program used to sign uploads.  [default: gpg]
+  --identity TEXT     GPG identity used to sign uploads.
+  --help              Show this message and exit.
 ```
 
-Reindex the repository:
+#### Check
+
+```
+Usage: stick check [OPTIONS]
+
+  Check for missing or changed packages.
+
+Options:
+  --bucket TEXT   S3 Bucket hosting the repository.  [required]
+  --prefix TEXT   Prefix within the S3 Bucket that repository objects are stored.  [default: simple]
+  --profile TEXT  Use a specific profile from your credential file to access S3.
+  --project TEXT  Check a specific project. May be specified multiple times.  [default: all projects]
+  --help          Show this message and exit.
+```
+
+#### Reindex
 
 _**Note:** Reindexing is not normally necessary unless files have been manually added or removed from the bucket.
 Reindexing will read all packages from the repository in order to extract packaging metadata._
@@ -85,12 +101,14 @@ Reindexing will read all packages from the repository in order to extract packag
 ```
 Usage: stick reindex [OPTIONS]
 
+  Reindex all packages within the repository, ignoring any existing metadata.
+
 Options:
-  --bucket TEXT         S3 Bucket hosting the repository.  [required]
-  --prefix TEXT         Prefix within the S3 Bucket under which repository objects will be created.  [default: simple]
-  --profile TEXT        Use a specific profile from your credential file to access S3.
-  --project TEXT        Reindex a specific project. May be specified multiple times.  [default: all projects]
-  --help                Show this message and exit.
+  --bucket TEXT   S3 Bucket hosting the repository.  [required]
+  --prefix TEXT   Prefix within the S3 Bucket that repository objects are stored.  [default: simple]
+  --profile TEXT  Use a specific profile from your credential file to access S3.
+  --project TEXT  Reindex a specific project. May be specified multiple times.  [default: all projects]
+  --help          Show this message and exit.
 ```
 
 Features

@@ -1,5 +1,7 @@
 import os
+
 import jinja2
+
 from . import util
 
 templates = os.path.join(os.path.dirname(__file__), 'templates')
