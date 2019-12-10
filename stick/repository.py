@@ -1,3 +1,4 @@
+import codecs
 import io
 import json
 import logging
@@ -169,14 +170,14 @@ class Repository(object):
         with io.BytesIO() as data:
             self.client.download_fileobj(Fileobj=data, Bucket=self.bucket, Key=json_key)
             data.seek(0, 0)
-            return json.load(io.TextIOWrapper(data))
+            return json.load(io.TextIOWrapper(data, encoding='utf-8'))
 
     def _put_manifest(self, safe_name, project):
         """Dump and upload the project manifest JSON"""
         json_key = '{0}{1}/manifest.json'.format(self.prefix, safe_name)
         logger.info('Uploading {0}'.format(json_key))
         with io.BytesIO() as data:
-            json.dump(project.get_manifest(), data)
+            json.dump(project.get_manifest(), codecs.getwriter('utf-8')(data))
             data.seek(0, 0)
             return self.client.put_object(Body=data, Bucket=self.bucket, Key=json_key, ContentType='application/json; charset=utf-8')
 
@@ -186,7 +187,7 @@ class Repository(object):
         json_key = '{0}{1}{2}/json'.format(self.prefix, safe_name, version_prefix)
         logger.info('Uploading {0}'.format(json_key))
         with io.BytesIO() as data:
-            json.dump(project.get_metadata(version), data)
+            json.dump(project.get_metadata(version), codecs.getwriter('utf-8')(data))
             data.seek(0, 0)
             return self.client.put_object(Body=data, Bucket=self.bucket, Key=json_key, ContentType='application/json; charset=utf-8')
 
