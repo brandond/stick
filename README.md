@@ -68,6 +68,7 @@ Positional Arguments:
 
 Options:
   --bucket TEXT       S3 Bucket hosting the repository.  [required]
+  --baseurl TEXT      Use an alternate base URL, instead of the S3 Bucket address.
   --prefix TEXT       Prefix within the S3 Bucket that repository objects are stored.  [default: simple]
   --profile TEXT      Use a specific profile from your credential file to access S3.
   --skip-existing / --no-skip-existing
@@ -87,6 +88,7 @@ Usage: stick check [OPTIONS]
 
 Options:
   --bucket TEXT   S3 Bucket hosting the repository.  [required]
+  --baseurl TEXT  Use an alternate base URL, instead of the S3 Bucket address.
   --prefix TEXT   Prefix within the S3 Bucket that repository objects are stored.  [default: simple]
   --profile TEXT  Use a specific profile from your credential file to access S3.
   --project TEXT  Check a specific project. May be specified multiple times.  [default: all projects]
@@ -105,6 +107,7 @@ Usage: stick reindex [OPTIONS]
 
 Options:
   --bucket TEXT   S3 Bucket hosting the repository.  [required]
+  --baseurl TEXT  Use an alternate base URL, instead of the S3 Bucket address.
   --prefix TEXT   Prefix within the S3 Bucket that repository objects are stored.  [default: simple]
   --profile TEXT  Use a specific profile from your credential file to access S3.
   --project TEXT  Reindex a specific project. May be specified multiple times.  [default: all projects]
@@ -138,3 +141,8 @@ repository in order to reflect the changes.
 
 Stick does not maintain a top-level project list. Whenever a package is uploaded or the repository reindexed, Stick checks all prefixes under
 the top-level prefix for a `manifest.json`. Any prefix containing such key is displayed in the project list.
+
+**Base URL Override**
+
+You may use the `--baseurl` option to specify an alternate base URL for links generated in the HTML indexes or JSON metadata. You can use this
+with CloudFront, S3 Access Points, or S3 CNAME DNS aliases. Note: The URL should include a trailing slash.
