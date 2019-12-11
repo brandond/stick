@@ -3,7 +3,6 @@ import io
 import json
 import logging
 import os
-from shutil import copyfileobj
 
 import boto3
 from backports import tempfile
@@ -19,8 +18,9 @@ logger = logging.getLogger(__name__)
 
 
 class Repository(object):
-    def __init__(self, bucket, prefix, profile):
+    def __init__(self, bucket, baseurl, prefix, profile):
         self.bucket = bucket
+        self.baseurl = baseurl
         self.prefix = prefix
         self.client = boto3.Session(profile_name=profile).client('s3', config=client_config)
         self._project_cache = {}
@@ -29,8 +29,8 @@ class Repository(object):
             self.prefix += '/'
 
     def get_url(self):
-        url = 'https://{0}.s3.amazonaws.com/{1}'.format(self.bucket, self.prefix)
-        return url
+        baseurl = self.baseurl or 'https://{0}.s3.amazonaws.com/'.format(self.bucket)
+        return baseurl + self.prefix
 
     def reindex(self, projects):
         """Rebuild html index and json metadata for projects in the repository"""
@@ -254,8 +254,7 @@ class Repository(object):
                         try:
                             filename = os.path.join(temp_dir, key)
                             logger.info('Downloading {0}'.format(item['Key']))
-                            with open(filename, 'wb') as data:
-                                copyfileobj(self.client.download_file(Bucket=self.bucket, Key=item['Key'])['Body'], data)
+                            self.client.download_file(Bucket=self.bucket, Key=item['Key'], Filename=filename)
                             package = PackageFile.from_filename(filename, '')
                             try:
                                 self.client.head_object(Bucket=self.bucket, Key=item['Key'] + '.asc')

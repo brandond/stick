@@ -31,6 +31,7 @@ def cli():
 
 @cli.command(context_settings={'max_content_width': 120, 'ignore_unknown_options': True})
 @click.option('--bucket', help='S3 Bucket hosting the repository.', required=True)
+@click.option('--baseurl', help='Use an alternate base URL, instead of the S3 Bucket address.', default=None)
 @click.option('--prefix', help='Prefix within the S3 Bucket that repository objects are stored.', default='simple', show_default=True)
 @click.option('--profile', help='Use a specific profile from your credential file to access S3.', default=None)
 @click.option('--skip-existing/--no-skip-existing', help='Skip uploading file if it already exists.', default=True, show_default=True)
@@ -71,6 +72,7 @@ def upload(dist, **kwargs):
 
 @cli.command(context_settings={'max_content_width': 120})
 @click.option('--bucket', help='S3 Bucket hosting the repository.', required=True)
+@click.option('--baseurl', help='Use an alternate base URL, instead of the S3 Bucket address.', default=None)
 @click.option('--prefix', help='Prefix within the S3 Bucket that repository objects are stored.', default='simple', show_default=True)
 @click.option('--profile', help='Use a specific profile from your credential file to access S3.', default=None)
 @click.option('--project', help='Reindex a specific project. May be specified multiple times.  [default: all projects]', default=None, multiple=True)
@@ -87,6 +89,7 @@ def reindex(project, **kwargs):
 
 @cli.command(context_settings={'max_content_width': 120})
 @click.option('--bucket', help='S3 Bucket hosting the repository.', required=True)
+@click.option('--baseurl', help='Use an alternate base URL, instead of the S3 Bucket address.', default=None)
 @click.option('--prefix', help='Prefix within the S3 Bucket that repository objects are stored.', default='simple', show_default=True)
 @click.option('--profile', help='Use a specific profile from your credential file to access S3.', default=None)
 @click.option('--project', help='Check a specific project. May be specified multiple times.  [default: all projects]', default=None, multiple=True)
