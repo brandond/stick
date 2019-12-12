@@ -25,9 +25,6 @@ class Repository(object):
         self.client = boto3.Session(profile_name=profile).client('s3', config=client_config)
         self._project_cache = {}
 
-        if not self.prefix.endswith('/'):
-            self.prefix += '/'
-
     def get_url(self):
         baseurl = self.baseurl or 'https://{0}.s3.amazonaws.com/'.format(self.bucket)
         return baseurl + self.prefix
