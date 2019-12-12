@@ -8,12 +8,36 @@ from twine.package import PackageFile
 from . import util
 from .settings import Settings
 
+try:
+    import urlparse
+except ImportError:
+    import urllib.parse as urlparse
+
 
 def _print_version(ctx, param, value):
     if not value or ctx.resilient_parsing:
         return
     logger.info('{} {}'.format(util.pkgname, util.version))
     ctx.exit()
+
+
+def _validate_url(ctx, param, value):
+    try:
+        url = urlparse.urlparse(value)
+    except ValueError:
+        raise click.BadParameter('you must provide a valid URL')
+
+    if not url.netloc:
+        raise click.BadParameter('you must provide an absolute URL')
+
+    if url.scheme not in ('http', 'https'):
+        raise click.BadParameter('you must provide an HTTP or HTTPS URL')
+
+    if not url.path.endswith('/'):
+        url = url._replace(path=url.path + '/')
+        click.echo(message='Trailing slash missing from baseurl; URL has been rewritten to {}'.format(url.geturl()), err=True)
+
+    return url.geturl()
 
 
 @click.group()
@@ -31,7 +55,7 @@ def cli():
 
 @cli.command(context_settings={'max_content_width': 120, 'ignore_unknown_options': True})
 @click.option('--bucket', help='S3 Bucket hosting the repository.', required=True)
-@click.option('--baseurl', help='Use an alternate base URL, instead of the S3 Bucket address.', default=None)
+@click.option('--baseurl', help='Use an alternate base URL, instead of the S3 Bucket address.', default=None, callback=_validate_url)
 @click.option('--prefix', help='Prefix within the S3 Bucket that repository objects are stored.', default='simple', show_default=True)
 @click.option('--profile', help='Use a specific profile from your credential file to access S3.', default=None)
 @click.option('--skip-existing/--no-skip-existing', help='Skip uploading file if it already exists.', default=True, show_default=True)
@@ -72,7 +96,7 @@ def upload(dist, **kwargs):
 
 @cli.command(context_settings={'max_content_width': 120})
 @click.option('--bucket', help='S3 Bucket hosting the repository.', required=True)
-@click.option('--baseurl', help='Use an alternate base URL, instead of the S3 Bucket address.', default=None)
+@click.option('--baseurl', help='Use an alternate base URL, instead of the S3 Bucket address.', default=None, callback=_validate_url)
 @click.option('--prefix', help='Prefix within the S3 Bucket that repository objects are stored.', default='simple', show_default=True)
 @click.option('--profile', help='Use a specific profile from your credential file to access S3.', default=None)
 @click.option('--project', help='Reindex a specific project. May be specified multiple times.  [default: all projects]', default=None, multiple=True)
@@ -89,7 +113,7 @@ def reindex(project, **kwargs):
 
 @cli.command(context_settings={'max_content_width': 120})
 @click.option('--bucket', help='S3 Bucket hosting the repository.', required=True)
-@click.option('--baseurl', help='Use an alternate base URL, instead of the S3 Bucket address.', default=None)
+@click.option('--baseurl', help='Use an alternate base URL, instead of the S3 Bucket address.', default=None, callback=_validate_url)
 @click.option('--prefix', help='Prefix within the S3 Bucket that repository objects are stored.', default='simple', show_default=True)
 @click.option('--profile', help='Use a specific profile from your credential file to access S3.', default=None)
 @click.option('--project', help='Check a specific project. May be specified multiple times.  [default: all projects]', default=None, multiple=True)
