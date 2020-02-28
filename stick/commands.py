@@ -23,6 +23,9 @@ def _print_version(ctx, param, value):
 
 
 def _check_url(ctx, param, value):
+    if value is None:
+        return
+
     try:
         url = urlparse.urlparse(value)
     except ValueError:
